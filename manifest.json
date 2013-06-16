@@ -1,0 +1,35 @@
+{
+	"name": "Neformat Downloader",
+	"version": "1.0",
+	"description": "Neformat forum music downloader",
+  
+	"icons":
+	{
+		"16" : "images/icon16.png",
+		"48" : "images/icon48.png",
+        "128" : "images/icon128.png"
+	 },
+			 
+	"background":
+	{
+		"scripts": "scripts/background.js"
+	},
+	
+    "permissions":
+	[
+		"tabs",
+		"http://*.deletemp3in24hours.com/*",
+		"http://www.neformat.com.ua/*"
+    ],
+		
+	"page_action":
+	{
+		"default_icon": {
+      		"19": "images/icon.ico"
+    	},
+		"default_title": "Neformat Downloader",
+		"default_popup": "popup.html"
+	},
+	
+	"manifest_version": 2
+}
