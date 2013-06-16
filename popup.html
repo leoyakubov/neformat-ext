@@ -1,0 +1,90 @@
+<html>
+<head>
+<title>Neformat forum music downloader</title>
+<link rel="stylesheet" type="text/css" href="styles/popup.css">
+<script src="scripts/popup.js"></script>
+</head>
+<body>
+	<div id="bodyDiv">
+		<div id="artistDiv" role="toolbar" tabindex="0" aria-activedescendant="checkAll">
+			<div id="artistName">None</div>
+			<table id="sitesTable">
+				<tbody>
+					<!-- Find on sites -->
+					<tr>
+						<td><span class="artistText">Find artist on: </span></td>
+						<td><a id="lastfm" class="imageLink"
+							href="http://www.last.fm/music/" target="_blank"> <img
+								src="http://cdn.last.fm/flatness/favicon.2.ico" title="Last.fm"
+								alt="Last.fm" />
+						</a></td>
+						<td><a id="grooveshark" class="imageLink"
+							href="http://grooveshark.com/#!/search/artist?q=" target="_blank">
+								<img
+								src="http://grooveshark.com/webincludes/images/favicon.ico?ver=4"
+								title="Grooveshark" alt="Grooveshark" />
+						</a></td>
+						<td><a id="youtube" class="imageLink"
+							href="http://www.youtube.com/results?search_query="
+							target="_blank"> <img
+								src="http://s.ytimg.com/yts/img/favicon-vfldLzJxy.ico"
+								title="Youtube" alt="Youtube" />
+						</a></td>
+						<td><a id="rutracker" class="imageLink"
+							href="http://rutracker.org/forum/tracker.php?nm=" target="_blank">
+								<img src="http://static.rutracker.org/favicon.ico"
+								title="RuTracker" alt="RuTracker" />
+						</a></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<br />
+		<div id="linksToolbar" role="toolbar" tabindex="0" aria-activedescendant="checkAll">
+			<!-- Checkbox (TODO: switch to button)-->
+			<input type="checkbox" id="checkAll" style="display: none;">
+			<label for="checkAll" style="display: none;">Parse all pages</label>
+			
+			<div id="linksLabel">Current page</div>
+			<table id="linksTable">
+				<tbody>
+					<tr>
+						<td><span id="foundHidden" class="linksNumber">0 </span></td>
+						<td><span class="linksText">post(s) with hidden
+								links</span></td>
+						<td class="linksButton"><a id="sayThanks" class="linksButton"
+							href="#">Say "Thanks"</a></td>
+					</tr>
+					<tr>
+						<td><span id="foundVisible" class="linksNumber">0 </span></td>
+						<td><span class="linksText">visible link(s)</span></td>
+						<td class="linksButton"><a id="downloadVisible" href="#">Download</a></td>
+					</tr>
+					<tr>
+						<td><span id="foundExternal" class="linksNumber">0 </span></td>
+						<td><span class="linksText">external link(s)</span></td>
+						<td class="linksButton"><a id="openExternal" href="#">Open</a></td>
+					</tr>
+					<tr>
+						<td></td>
+					</tr>
+				</tbody>
+			</table>
+			<!-- Status bar -->
+			<span id="statusBar"></span>
+		</div>
+		<br />
+		<div id="optionsToolbar" role="toolbar" tabindex="0" aria-activedescendant="checkAll">
+			<!-- Login -->
+			<div id="userDiv">
+				Neformat user: <a id="userLink" href="#">None</a>
+			</div>
+			<div id="aboutDiv">
+				<a id="aboutLink" href="#">About</a>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
+</body>
+</html>

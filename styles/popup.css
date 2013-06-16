@@ -1,0 +1,79 @@
+body {
+	width:350px;
+	height:200px;
+	background-color:#FFFFFF;
+	margin:0;
+}
+
+a.imageLink {
+    text-decoration:none;
+}
+
+img.logo {
+	width:200px;
+
+}
+
+#artistName {
+	font-weight:bold;
+	font-size:18;
+	text-align:center;
+}
+
+#sitesTable td { 
+	padding:10px;
+	border:0px;
+}
+
+#bodyDiv {
+	border: 1px solid brown;
+	margin:0;
+	padding:5px;
+}
+
+#userDiv {
+	text-align:left;
+	font-family: tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
+	font-size:11px;
+	display:inline-block;
+}
+
+#aboutDiv {
+	text-align:left;
+	font-family: tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
+	font-size:11px;
+	display:inline-block;
+	float:right;
+}
+
+#userLink {
+	color: #681313;
+	font-family: tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
+	font-size:11px;
+	font-weight: bold;
+}
+
+.linksButton {
+	text-align:right;
+}
+
+#linksTable {
+	width:100%;	
+}
+
+#statusBar {
+	font-size:11px;
+}
+.linksNumber {
+	padding:10px;
+}
+
+a {
+	color: #681313;
+	font-family: tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
+	font-size:11px;
+	font-weight: bold;
+}
+#linksLabel {
+	text-align:center;
+}
