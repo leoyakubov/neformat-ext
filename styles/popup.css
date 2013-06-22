@@ -5,13 +5,10 @@ body {
 	margin:0;
 }
 
-a.imageLink {
-    text-decoration:none;
-}
-
-img.logo {
-	width:200px;
-
+#bodyDiv {
+	border: 1px solid brown;
+	margin:0;
+	padding:5px;
 }
 
 #artistName {
@@ -25,47 +22,34 @@ img.logo {
 	border:0px;
 }
 
-#bodyDiv {
-	border: 1px solid brown;
-	margin:0;
-	padding:5px;
+#linksLabel {
+	padding:10px;
 }
 
-#userDiv {
-	text-align:left;
-	font-family: tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
-	font-size:11px;
-	display:inline-block;
+#linksTable {
+	width:100%;
+	font: 10pt tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;	
 }
 
-#aboutDiv {
-	text-align:left;
-	font-family: tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
-	font-size:11px;
-	display:inline-block;
-	float:right;
-}
-
-#userLink {
-	color: #681313;
-	font-family: tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
-	font-size:11px;
-	font-weight: bold;
+.linksNumber {
+	padding-right:10px;
+	padding-left:10px;
 }
 
 .linksButton {
 	text-align:right;
 }
 
-#linksTable {
-	width:100%;	
-}
-
 #statusBar {
 	font-size:11px;
 }
-.linksNumber {
-	padding:10px;
+
+#userTextSpan {
+	font-size:13px;
+}
+
+#aboutLink {
+	float:right;
 }
 
 a {
@@ -74,6 +58,7 @@ a {
 	font-size:11px;
 	font-weight: bold;
 }
-#linksLabel {
-	text-align:center;
+
+span, div {
+	font: 10pt tahoma, verdana, geneva, lucida, 'lucida grande', arial, helvetica, sans-serif;
 }

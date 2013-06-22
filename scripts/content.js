@@ -21,6 +21,12 @@ var thanksLinks = [];
 var INIT_DATA_MSG = "initData",
 	SAY_THANKS_MSG = "sayThanks",
 	PROCESSING_INTERNAL_MSG = "processingInternal";
+//External sites (file sharing)
+var mediafire = "mediafire.com",
+	rapidshare = "rapidshare.com",
+	ifolder = "ifolder.ru";
+
+var	externallSites = [mediafire, rapidshare, ifolder];
 	
 //Initialize script after injection
 getInitData();
@@ -145,16 +151,16 @@ function findInternalLinksOnCurrentPage() {
 	//search all visible links 
 	var links_xpath = "//a[contains(@href,'deletemp3in24hours.com')]",
 		allPosts = document.evaluate(links_xpath, document, null, XPathResult.ANY_TYPE, null),
-		postNode = allPosts.iterateNext();
+		linkNode = allPosts.iterateNext();
 	
 	//Cleanup links array
 	internalLinks.length = 0;
 	
-	while (postNode) {
-		console.log("Found link: " + postNode.href);
+	while (linkNode) {
+		console.log("Found link: " + linkNode.href);
 		//Add link to array, later we will download all files using those URLs
-		internalLinks.push(postNode.href);
-		postNode = allPosts.iterateNext();
+		internalLinks.push(linkNode.href);
+		linkNode = allPosts.iterateNext();
 	}
 }
 
@@ -163,8 +169,20 @@ function findInternalLinksOnCurrentPage() {
  * These links will be used by popup script to open them in a separate tabs
  */
 function findExternalLinksOnCurrentPage() {
-	//TODO: Add external sites array
-	//TODO: Add code
+	//Cleanup links array
+	externalLinks.length = 0;
+	for (var i = 0; i < externallSites.length; i++) {
+		  site = externallSites[i];
+		  var links_xpath = "//a[contains(@href,'" + site +"')]",
+			allLinks = document.evaluate(links_xpath, document, null, XPathResult.ANY_TYPE, null),
+			linkNode = allLinks.iterateNext();
+
+			while (linkNode) {
+				console.log("Found external link: " + linkNode.href);
+				externalLinks.push(linkNode.href);
+				linkNode = allLinks.iterateNext();
+		}
+	}
 }
 
 /**
@@ -185,7 +203,7 @@ function processPage(requestMsg) {
 		var xmlHttp = new XMLHttpRequest();
 		xmlHttp.open("GET", location.href, false); //false - wait for server response
 		    
-		//Once we've got the response - search for internal links and send them to popup   
+		//Once we've got the response - search for internal links and send them to popup
 		xmlHttp.onreadystatechange = function() {
 		 	if (xmlHttp.readyState == 4) {
 		   		if(xmlHttp.status == 200) {
@@ -228,7 +246,7 @@ function processPage(requestMsg) {
 }
 
 /**
- * Hit all Thanks URL - this will make hidden links visible
+ * Hits all Thanks URL - this will make hidden links visible
  */
 function processHiddenLinks() {
 	//If found - hit 'em all
@@ -269,7 +287,8 @@ chrome.runtime.onMessage.addListener(
 										profileLinkMsg: profileLink, 
 										artistMsg: artist,
 										postsWithHiddenLinksMsg: thanksLinks.length,
-										internalLinksMsg: internalLinks});
+										internalLinksMsg: internalLinks,
+										externalLinksMsg: externalLinks});
 		}
 		//Handle SAY_THANKS_MSG data request
 		if (requestMsg == SAY_THANKS_MSG) {

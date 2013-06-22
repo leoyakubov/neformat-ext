@@ -113,10 +113,18 @@ function handleInitData(request) {
 		var internalCountElem = document.getElementById('foundVisible');
 		internalCountElem.innerText = internalLinks.length;		
 	}
+	
+	//Handle external links 
+	externalLinks = request.externalLinksMsg;
+	if (externalLinks.length > 0) {
+		console.log("Found external links: " + externalLinks.length);
+		var externalCountElem = document.getElementById('foundExternal');
+		externalCountElem.innerText = externalLinks.length;		
+	}
 }
 
 /**
- * Opens user profile page in e separate tab
+ * Opens user profile page in a separate tab
  */
 function openProfilePage() {
 	chrome.tabs.create({url: profileLink});
@@ -144,7 +152,7 @@ function downloadByInternalLinks() {
 	var url = "";
 	for (var i=0; i < internalLinks.length; i++) {
 		url = internalLinks[i];
-		chrome.tabs.create({url: url}, function(tab) {
+		chrome.tabs.create({url: url, active: false}, function(tab) {
 			donwloadTabIds.push(tab.id);
 		});
 	}
@@ -154,7 +162,11 @@ function downloadByInternalLinks() {
  * Opens every external link in a separate tab
  */
 function openExternalLinks() {
-	//TODO: Add code
+	var url = "";
+	for (var i=0; i < externalLinks.length; i++) {
+		url = externalLinks[i];
+		chrome.tabs.create({url: url, active: false});
+	}
 }
 
 /**
@@ -184,7 +196,7 @@ function handleUpdatedLinksData(request) {
 	setStatus(statusMsg);
 }
 
-/** Sets e message within a status bar
+/** Sets message within a status bar
  * @param msg - string to be set within status bar
  */
 function setStatus(msg) {
