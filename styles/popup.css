@@ -1,9 +1,9 @@
 body {
 	width:350px;
-	height:200px;
+	height:200px; 
 	background-color:#FFFFFF;
 	margin:0;
-}
+} 
 
 #bodyDiv {
 	border: 1px solid brown;
@@ -50,6 +50,32 @@ body {
 
 #aboutLink {
 	float:right;
+}
+
+#aboutPopup{
+    color:#4C4C4C;
+    background:#FFFFFF;
+    -webkit-border-radius:3px;
+    border:1px solid #D4D4D4;
+    clear:both;
+    padding:3px;
+    margin:20px 2px 2px;
+    display:none;
+    -webkit-background-clip: padding-box;
+}
+
+#aboutSection{
+  position: relative;
+}
+
+#extName {
+	font-size:15px;
+	font-weight: bold;
+}
+
+#author {
+	font-size:12px;
+	font-weight: bold;
 }
 
 a {

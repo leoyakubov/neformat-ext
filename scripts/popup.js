@@ -21,9 +21,10 @@ var INIT_DATA_MSG = "initData";
 	SAY_THANKS_MSG = "sayThanks";
 //Here we store IDs of all download tabs
 var donwloadTabIds = [];
-//id of current tab
+//ID of current tab
 var currTabId = -1;
-
+//Flag for about page
+var isAboutPageOpened = false;
 
 /**
  * Initializes popup page, sends a message to content script to get all data needed
@@ -36,6 +37,7 @@ function initPopup() {
 	document.querySelector('#sayThanks').addEventListener('click', sayThanksForAllPostsWithHiddenLinks);
 	document.querySelector('#downloadVisible').addEventListener('click', downloadByInternalLinks);
 	document.querySelector('#openExternal').addEventListener('click', openExternalLinks);
+	document.querySelector('#aboutLink').addEventListener('click', showAboutPage);
 
 	chrome.tabs.query({currentWindow: true, active: true}, function (tabs) {
 		currTabId = tabs[0].id;
@@ -128,6 +130,26 @@ function handleInitData(request) {
  */
 function openProfilePage() {
 	chrome.tabs.create({url: profileLink});
+}
+
+/**
+ * Opens about page
+ */
+function showAboutPage() {	
+	var aboutPageElem = document.getElementById('aboutPopup');
+	
+	if (!isAboutPageOpened) {
+		var extNameElem = document.getElementById('extName');
+		extNameElem.innerText = chrome.runtime.getManifest().name + " v." + chrome.runtime.getManifest().version;
+		aboutPageElem.style.display = "block";
+	}
+	else {
+		aboutPageElem.style.display = "none";
+		//TODO Revert body height
+	}
+	
+	//Invert flag
+	isAboutPageOpened = !isAboutPageOpened;
 }
 
 /**

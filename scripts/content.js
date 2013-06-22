@@ -24,9 +24,11 @@ var INIT_DATA_MSG = "initData",
 //External sites (file sharing)
 var mediafire = "mediafire.com",
 	rapidshare = "rapidshare.com",
-	ifolder = "ifolder.ru";
+	ifolder = "ifolder.ru",
+	letitbit = "letitbit.net",
+	depositfiles = "depositfiles.com";
 
-var	externallSites = [mediafire, rapidshare, ifolder];
+var	externallSites = [mediafire, rapidshare, ifolder, letitbit, depositfiles];
 	
 //Initialize script after injection
 getInitData();
