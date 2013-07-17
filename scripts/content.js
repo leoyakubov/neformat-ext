@@ -14,9 +14,12 @@ var DEFAULT_LOGIN_STR = "NONE_USER",
 	profileLink = "",
 	artist = DEFAULT_ARTIST_STR;
 //Links
-var thanksLinks = [];
-	internalLinks = [];
+var thanksLinks = [],
+	internalLinks = [],
 	externalLinks = [];
+//Pages
+var currentPage = 1,
+ 	pagesNumber = 1;
 //Messages
 var INIT_DATA_MSG = "initData",
 	PROCESSING_INTERNAL_MSG = "processingInternal",
@@ -63,6 +66,9 @@ function getInitData() {
 			findExternalLinksOnCurrentPage();
 		}
 	}
+	
+	//Update pages counter
+	getArtistPagesNumber();
 }
 
 /**
@@ -272,6 +278,44 @@ function processHiddenLinks() {
 		
 		//Perform cleanup
 		thanksLinks.length = 0;
+	}
+}
+
+/**
+ * Gets a number of pages for current artist
+ */
+function getArtistPagesNumber() {
+	//debugger;
+	//search pages element on current page 
+	var pages_xpath = "/html/body/div/div/div/table[4]/tbody/tr/td[2]/div/table/tbody/tr/td",
+		allPages = document.evaluate(pages_xpath, document, null, XPathResult.ANY_TYPE, null),
+		pageNode = allPages.iterateNext();
+	
+	while (pageNode) {
+		var currentPageStr = pageNode.innerText.replace(/Страница /g, '');  
+		var pos = currentPageStr.indexOf(" ");
+		currentPageStr = currentPageStr.substring(0, pos);
+		currentPage = parseInt(currentPageStr, 10);
+		
+		var regex = new RegExp("Страница " + currentPage + " из ", "g");
+		var pagesCnt = pageNode.innerText.replace(regex, '');
+		pagesNumber = parseInt(pagesCnt, 10);
+		
+		break;
+	}
+	
+	console.log("Current page: " + currentPage);
+	console.log("Found pages: " + pagesNumber);
+}
+
+//TODO Finish this
+function getArrayOfLinksToArtistPages() {
+	var links = [location.href];
+	console.log("All pages:");
+	for (var i=2; i <= pagesNumber; i++) {
+		var pageUrl = location.href;
+		pageUrl = pageUrl.replace(/.html/g, "-" + i + ".html");
+		console.log(pageUrl);
 	}
 }
 
