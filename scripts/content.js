@@ -19,8 +19,8 @@ var thanksLinks = [];
 	externalLinks = [];
 //Messages
 var INIT_DATA_MSG = "initData",
-	SAY_THANKS_MSG = "sayThanks",
-	PROCESSING_INTERNAL_MSG = "processingInternal";
+	PROCESSING_INTERNAL_MSG = "processingInternal",
+	SAY_THANKS_MSG = "sayThanks";
 //External sites (file sharing)
 var mediafire = "mediafire.com",
 	rapidshare = "rapidshare.com",
@@ -42,7 +42,7 @@ function getInitData() {
 	
 	//Get user login and link to profile page
 	if (!isUserLoggedIn()) {
-		getLogin();		
+		getLogin();
 	}
 	//Get artist name
 	if (artist == DEFAULT_ARTIST_STR) {
@@ -59,7 +59,9 @@ function getInitData() {
 			findInternalLinksOnCurrentPage();			
 		}
 		//Search external links
-		findExternalLinksOnCurrentPage();		
+		if (externalLinks.length < 1) {
+			findExternalLinksOnCurrentPage();
+		}
 	}
 }
 
@@ -88,11 +90,7 @@ function getLogin() {
  * @returns {Boolean}
  */
 function isUserLoggedIn() {
-	if (login == DEFAULT_LOGIN_STR) {
-		return false;
-	}
-	
-	return true;
+	return login == DEFAULT_LOGIN_STR ? false : true; 
 }
 
 /**
@@ -159,7 +157,7 @@ function findInternalLinksOnCurrentPage() {
 	internalLinks.length = 0;
 	
 	while (linkNode) {
-		console.log("Found link: " + linkNode.href);
+		console.log("Found internal link: " + linkNode.href);
 		//Add link to array, later we will download all files using those URLs
 		internalLinks.push(linkNode.href);
 		linkNode = allPosts.iterateNext();
@@ -214,9 +212,9 @@ function processPage(requestMsg) {
 		   			//NOTE: After parsing the response text into XML document no exceptions occured, 
 		   			//but we were unable to find any links by using document.evaluate() method,
 		   			//since the retrieved document is not a valid XML document
-		   			//So, as a current solution we can append a new div element to the current page
-		   			//and process the document - now it will contain the old content and also
-		   			//the new one after all Thanks buttons were "clicked" - all hidden links now became visible
+		   			//So, as a current solution we can append a new body element to the current page
+		   			//and process the document - now it will contain the updated content 
+		   			//after all Thanks buttons were "clicked" - all hidden links now became visible
 		    			
 		   			/*var srvResponse = null;
 		   			try {
@@ -229,9 +227,12 @@ function processPage(requestMsg) {
 		   			//Retrieve page
 		   			var srvResponseText = xmlHttp.responseText;
 		   			var tempBody = document.createElement('body');
-		   			tempBody.setAttribute("id", "reload");
+		   			tempBody.setAttribute("id", "reloaded");
 		   			tempBody.innerHTML = srvResponseText;//.replace(/<script(.|\s)*?\/script>/g, '');
 		   			document.body = tempBody;
+		   			
+		   			//First search for hidden links again to be sure all Thanks buttons were processed
+		   			findPostsWithHiddenLinksOnCurrentPage();
 		   			
 		   			//Now extract all internal links 
 		   			findInternalLinksOnCurrentPage();
@@ -253,6 +254,7 @@ function processPage(requestMsg) {
 function processHiddenLinks() {
 	//If found - hit 'em all
 	if (thanksLinks.length > 0) {
+		console.log("thanksLinks.length: " + thanksLinks.length);
 		var xmlHttp = null;
 		for (var i=0; i < thanksLinks.length; i++) {
 			xmlHttp = new XMLHttpRequest();
@@ -264,13 +266,12 @@ function processHiddenLinks() {
 					}
 				}
 			};
+			console.log("Hitting link: " + thanksLinks[i]);
 			xmlHttp.send(null);
-			
-			//Remove link from array. This is needed to update the corresponding element on popup page
-			//Ideally, the array at the end should be empty
-			var index = thanksLinks.indexOf(thanksLinks[i]);
-			thanksLinks.splice(index, 1);
 		}
+		
+		//Perform cleanup
+		thanksLinks.length = 0;
 	}
 }
 
