@@ -19,7 +19,7 @@ var thanksLinks = [],
 	externalLinks = [];
 //Pages
 var currentPage = 1,
- 	pagesNumber = 1;
+ 	numberOfPages = 1;
 //Messages
 var INIT_DATA_MSG = "initData",
 	PROCESSING_INTERNAL_MSG = "processingInternal",
@@ -30,7 +30,6 @@ var mediafire = "mediafire.com",
 	ifolder = "ifolder.ru",
 	letitbit = "letitbit.net",
 	depositfiles = "depositfiles.com";
-
 var	externallSites = [mediafire, rapidshare, ifolder, letitbit, depositfiles];
 	
 //Initialize script after injection
@@ -68,7 +67,10 @@ function getInitData() {
 	}
 	
 	//Update pages counter
-	getArtistPagesNumber();
+	if (numberOfPages == 1) {
+		getNumberOfArtistPages();		
+		getArrayOfLinksToArtistPages();
+	}
 }
 
 /**
@@ -284,9 +286,9 @@ function processHiddenLinks() {
 /**
  * Gets a number of pages for current artist
  */
-function getArtistPagesNumber() {
+function getNumberOfArtistPages() {
 	//debugger;
-	//search pages element on current page 
+	//Search pages element on current page 
 	var pages_xpath = "/html/body/div/div/div/table[4]/tbody/tr/td[2]/div/table/tbody/tr/td",
 		allPages = document.evaluate(pages_xpath, document, null, XPathResult.ANY_TYPE, null),
 		pageNode = allPages.iterateNext();
@@ -299,24 +301,51 @@ function getArtistPagesNumber() {
 		
 		var regex = new RegExp("Страница " + currentPage + " из ", "g");
 		var pagesCnt = pageNode.innerText.replace(regex, '');
-		pagesNumber = parseInt(pagesCnt, 10);
+		numberOfPages = parseInt(pagesCnt, 10);
 		
 		break;
 	}
 	
 	console.log("Current page: " + currentPage);
-	console.log("Found pages: " + pagesNumber);
+	console.log("Found pages: " + numberOfPages);
 }
 
-//TODO Finish this
+/**
+ * Gets an array of URLs to artist pages
+ */
 function getArrayOfLinksToArtistPages() {
 	var links = [location.href];
+	
+	//Set the URL of the first page
+	if (currentPage != 1) {
+		var regex = new RegExp("-" + currentPage + ".html", "g"),
+		urlStr = location.href.replace(regex, ".html");
+		links[0] = urlStr;
+	}
+	
 	console.log("All pages:");
-	for (var i=2; i <= pagesNumber; i++) {
-		var pageUrl = location.href;
+	console.log(links[0]);
+	for (var i=2; i <= numberOfPages; i++) {
+		var pageUrl = links[0];
 		pageUrl = pageUrl.replace(/.html/g, "-" + i + ".html");
 		console.log(pageUrl);
 	}
+}
+
+function parseAllArtistPages() {
+	console.log("Parsing all pages... ");
+	
+	//Get array of links
+	//Get pages (hit urls)
+	//Append all pages
+	//Parse all pages
+	//Get links to posts with hidden music
+	//Get external links
+	//Get internal links
+	//if (auto_process) -
+	//	hit all links to posts
+	// re-parse internal links
+	// send all internal and external links to popup
 }
 
 //Listens to income messages
@@ -336,6 +365,10 @@ chrome.runtime.onMessage.addListener(
 										postsWithHiddenLinksMsg: thanksLinks.length,
 										internalLinksMsg: internalLinks,
 										externalLinksMsg: externalLinks});
+			//Pase all pages in background
+			//The found links will be stored in content script, and will be sent to popup script on demand
+			parseAllArtistPages();
+			
 		}
 		//Handle SAY_THANKS_MSG data request
 		if (requestMsg == SAY_THANKS_MSG) {

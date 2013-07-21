@@ -18,14 +18,20 @@ var internalLinks = [],
 //Messages
 var INIT_DATA_MSG = "initData";
 	PROCESSING_INTERNAL_MSG = "processingInternal",
-	SAY_THANKS_MSG = "sayThanks";
+	SAY_THANKS_MSG = "sayThanks",
+	ALL_PAGES_DATA_MSG = "allPagesData";
 //Here we store IDs of all download tabs
 var donwloadTabIds = [];
 //ID of current tab
 var currTabId = -1;
 //Flag for about page
 var isAboutPageOpened = false;
-
+//All pages data
+var isChecked = false,
+	areAllPagesProcessed = false,
+	allPagesPostsWithHiddenLinks = [],
+	allPagesInternalLinks = [],
+	allPagesExternalLinks = [];
 /**
  * Initializes popup page, sends a message to content script to get all data needed
  *  
@@ -38,6 +44,7 @@ function initPopup() {
 	document.querySelector('#downloadVisible').addEventListener('click', downloadByInternalLinks);
 	document.querySelector('#openExternal').addEventListener('click', openExternalLinks);
 	document.querySelector('#aboutLink').addEventListener('click', showAboutPage);
+	document.querySelector('#allPagesCheckBox').addEventListener('click', setAllPagesData);
 
 	chrome.tabs.query({currentWindow: true, active: true}, function (tabs) {
 		currTabId = tabs[0].id;
@@ -99,6 +106,10 @@ function handleInitData(request) {
 	rtElement.href = rtElement.href + artist.replace(/ /g, '%20');
 	//console.log("Corrected rt URL:" + rtElement.href);
 	
+	
+}
+
+function updateLinksData(request, setForCurrentPage) {
 	//Handle posts containing hidden links
 	var postsWithHiddenLinks = request.postsWithHiddenLinksMsg;	
 	if (postsWithHiddenLinks > 0) {
@@ -124,7 +135,6 @@ function handleInitData(request) {
 		externalCountElem.innerText = externalLinks.length;		
 	}
 }
-
 /**
  * Opens user profile page in a separate tab
  */
@@ -226,6 +236,38 @@ function setStatus(msg) {
 	countElem.innerText = msg;
 }
 
+function setAllPagesData() {
+	var checkBoxElem = document.getElementById('allPagesCheckBox');
+	isChecked = checkBoxElem.checked;
+	
+	areAllPagesProcessed = true;
+	//Show data for all pages
+	if (isChecked) {
+		//Check if script has all page data
+		if (areAllPagesProcessed) {
+			console.log("Showing all pages data");
+		}
+	}
+	//Show data for current page
+	else {
+		console.log("Showing current page data");
+	}
+}
+
+function handleAllPagesData(request) {
+	//Just store data related to all artist pages
+	//The UI will be updated by a separate function on user's click
+	areAllPagesProcessed = true;
+	allPagesPostsWithHiddenLinks = request.allPagesPostsWithHiddenLinksMsg;
+	allPagesInternalLinks = request.allPagesInternalLinksMsg;
+	allPagesExternalLinks = request.allPagesExternalLinksMsg;
+	
+	//Set status
+	var numOfPages = request.numberOFPagesMsg;
+	var statusMsg = numOfPages + " artist pages parsed";
+	setStatus(statusMsg);
+}
+
 //Fires up when popup page has been loaded
 document.addEventListener('DOMContentLoaded', function() {
 	initPopup();
@@ -247,5 +289,8 @@ chrome.extension.onMessage.addListener(
 			}
 			if (requestMsg == SAY_THANKS_MSG) {
 				handleUpdatedLinksData(request);
+			}
+			if (requestMsg == ALL_PAGES_DATA_MSG) {
+				handleAllPagesData(request);	
 			}
 });

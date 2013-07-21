@@ -39,12 +39,7 @@
 				</tbody>
 			</table>
 		</div>
-		<br />
 		<div id="linksToolbar" role="toolbar" tabindex="0" aria-activedescendant="checkAll">
-			<!-- Checkbox (TODO: switch to button)-->
-			<input type="checkbox" id="checkAll" style="display: none;">
-			<label for="checkAll" style="display: none;">Parse all pages</label>
-			
 			<div id="linksLabel">Current page</div>
 			<table id="linksTable">
 				<tbody>
@@ -68,8 +63,12 @@
 					</tr>
 				</tbody>
 			</table>
+			<!-- Checkbox (TODO: switch to button)-->
+			<input type="checkbox" id="allPagesCheckBox" > <!--  style="display: none;" -->
+			<label for="allPagesCheckBox">Show for all pages</label>
+			<br/>
 			<!-- Status bar -->
-			<span id="statusBar"></span>
+			<div id="statusBar"></div>
 		</div>
 		<br />
 		<div id="optionsToolbar" role="toolbar" tabindex="0" aria-activedescendant="checkAll">
