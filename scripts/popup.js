@@ -15,6 +15,7 @@ var login = "",
 //Links
 var internalLinks = [],
 	externalLinks = [];
+var postsWithHiddenLinksCount = 0;
 //Messages
 var INIT_DATA_MSG = "initData";
 	PROCESSING_INTERNAL_MSG = "processingInternal",
@@ -27,11 +28,12 @@ var currTabId = -1;
 //Flag for about page
 var isAboutPageOpened = false;
 //All pages data
-var isChecked = false,
+var isCheckboxEnabled = false,
 	areAllPagesProcessed = false,
-	allPagesPostsWithHiddenLinks = [],
+	allPagesPostsWithHiddenLinksCount = 0,
 	allPagesInternalLinks = [],
 	allPagesExternalLinks = [];
+
 /**
  * Initializes popup page, sends a message to content script to get all data needed
  *  
@@ -44,7 +46,7 @@ function initPopup() {
 	document.querySelector('#downloadVisible').addEventListener('click', downloadByInternalLinks);
 	document.querySelector('#openExternal').addEventListener('click', openExternalLinks);
 	document.querySelector('#aboutLink').addEventListener('click', showAboutPage);
-	document.querySelector('#allPagesCheckBox').addEventListener('click', setAllPagesData);
+	document.querySelector('#allPagesCheckBox').addEventListener('click', setPagesDataOnCheckboxClick);
 
 	chrome.tabs.query({currentWindow: true, active: true}, function (tabs) {
 		currTabId = tabs[0].id;
@@ -105,36 +107,68 @@ function handleInitData(request) {
 	var rtElement = document.getElementById('rutracker');
 	rtElement.href = rtElement.href + artist.replace(/ /g, '%20');
 	//console.log("Corrected rt URL:" + rtElement.href);
+
+	//Init local data
+	postsWithHiddenLinksCount = request.postsWithHiddenLinksCountMsg;	
+	internalLinks = request.internalLinksMsg;
+	externalLinks = request.externalLinksMsg;
+
+	console.log("Current page: post with hidden links found: " + postsWithHiddenLinksCount);
+	console.log("Current page: internal links found: " + internalLinks.length);
+	console.log("Current page: exteranl links found: " + externalLinks.length);
 	
-	
+	//Finally, set links data
+	updateLinksData();
 }
 
-function updateLinksData(request, setForCurrentPage) {
+/**
+ * Sets up links data found on page
+ * 
+ * @param request - object containing all init data sent by content script to popup
+ * 
+ * @param setAllPagesData - true if links data from all pages should be set
+ */
+function updateLinksData() {
+	console.log("Setting links data...");
+	var hiddenCount,
+		internal,
+		external;
+	//Set data for current page only
+	if (!isCheckboxEnabled) {
+		hiddenCount = postsWithHiddenLinksCount;
+		internal = internalLinks;
+		external = externalLinks;
+	}
+	//Set data for all pages
+	else {
+		hiddenCount = allPagesPostsWithHiddenLinksCount;
+		internal = allPagesInternalLinks;
+		external = allPagesExternalLinks;
+	}
+	
 	//Handle posts containing hidden links
-	var postsWithHiddenLinks = request.postsWithHiddenLinksMsg;	
-	if (postsWithHiddenLinks > 0) {
-		console.log("Found posts with hidden links: " + postsWithHiddenLinks);
-		var hiddenCountElem = document.getElementById('foundHidden');
-		hiddenCountElem.innerText = postsWithHiddenLinks;
+	var hiddenCountElem = document.getElementById('foundHidden');
+	hiddenCountElem.innerText = hiddenCount;
+	if (hiddenCount > 0) {
 		hiddenCountElem.style.color = "Red";
+	}
+	else {
+		hiddenCountElem.style.color = "Black";
 	}
 	
 	//Handle visible internal links 
-	internalLinks = request.internalLinksMsg;
-	if (internalLinks.length > 0) {
-		console.log("Found internal links: " + internalLinks.length);
-		var internalCountElem = document.getElementById('foundVisible');
-		internalCountElem.innerText = internalLinks.length;		
-	}
+	var internalCountElem = document.getElementById('foundVisible');
+	internalCountElem.innerText = internal.length;		
 	
 	//Handle external links 
-	externalLinks = request.externalLinksMsg;
-	if (externalLinks.length > 0) {
-		console.log("Found external links: " + externalLinks.length);
-		var externalCountElem = document.getElementById('foundExternal');
-		externalCountElem.innerText = externalLinks.length;		
-	}
+	var externalCountElem = document.getElementById('foundExternal');
+	externalCountElem.innerText = external.length;		
+	
+	//Clear status
+	var statusMsg = "Done!";
+	setStatus(statusMsg);
 }
+
 /**
  * Opens user profile page in a separate tab
  */
@@ -201,34 +235,8 @@ function openExternalLinks() {
 	}
 }
 
-/**
- * Updates popup page elements after processing all posts with hidden links
- * 
- * @param request - object received from content script containing internal visible links
- */
-function handleUpdatedLinksData(request) {
-	//Handle visible internal links 
-	var postsWithHiddenLinks = request.postsWithHiddenLinksMsg;
-	console.log("Found posts with hidden links: " + postsWithHiddenLinks);
-	var hiddenCountElem = document.getElementById('foundHidden');
-	hiddenCountElem.innerText = postsWithHiddenLinks;
-	
-	if (postsWithHiddenLinks == 0) {
-		hiddenCountElem.style.color = "Black";
-	}
-	
-	//Handle posts with hidden links
-	internalLinks = request.internalLinksMsg;
-	console.log("Found internal inks: " + internalLinks.length);
-	var internalCountElem = document.getElementById('foundVisible');
-	internalCountElem.innerText = internalLinks.length;
-	
-	//Clear status
-	var statusMsg = "Done!";
-	setStatus(statusMsg);
-}
-
 /** Sets message within a status bar
+ * 
  * @param msg - string to be set within status bar
  */
 function setStatus(msg) {
@@ -236,35 +244,51 @@ function setStatus(msg) {
 	countElem.innerText = msg;
 }
 
-function setAllPagesData() {
+function setPagesDataOnCheckboxClick() {
 	var checkBoxElem = document.getElementById('allPagesCheckBox');
-	isChecked = checkBoxElem.checked;
+	isCheckboxEnabled = checkBoxElem.checked;
 	
-	areAllPagesProcessed = true;
+	//areAllPagesProcessed = true;
+	var linksLabelElem = document.getElementById('linksLabel');
+	
+	//Check if script has all page data
+	if (!areAllPagesProcessed) {
+		return;
+	}
+		
 	//Show data for all pages
-	if (isChecked) {
-		//Check if script has all page data
-		if (areAllPagesProcessed) {
-			console.log("Showing all pages data");
-		}
+	if (isCheckboxEnabled) {
+		console.log("Showing all pages data");
+		
+		//Set title
+		linksLabelElem.innerText = "All pages";
 	}
 	//Show data for current page
 	else {
 		console.log("Showing current page data");
+		
+		linksLabelElem.innerText = "Current page";
 	}
+	
+	updateLinksData();
 }
 
 function handleAllPagesData(request) {
+	console.log("Setting all pages data");
 	//Just store data related to all artist pages
 	//The UI will be updated by a separate function on user's click
 	areAllPagesProcessed = true;
-	allPagesPostsWithHiddenLinks = request.allPagesPostsWithHiddenLinksMsg;
+	allPagesPostsWithHiddenLinksCount = request.allPagesPostsWithHiddenLinksCountMsg;
 	allPagesInternalLinks = request.allPagesInternalLinksMsg;
 	allPagesExternalLinks = request.allPagesExternalLinksMsg;
 	
+	console.log("All pages: post with hidden links found: " + allPagesPostsWithHiddenLinksCount);
+	console.log("All pages: internal links found: " + allPagesInternalLinks.length);
+	console.log("All pages: exteranl links found: " + allPagesExternalLinks.length);
+	
 	//Set status
 	var numOfPages = request.numberOFPagesMsg;
-	var statusMsg = numOfPages + " artist pages parsed";
+	var statusMsg = numOfPages + " pages parsed";
 	setStatus(statusMsg);
 }
 

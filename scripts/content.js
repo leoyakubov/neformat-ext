@@ -13,24 +13,31 @@ var DEFAULT_LOGIN_STR = "NONE_USER",
 	login = DEFAULT_LOGIN_STR,
 	profileLink = "",
 	artist = DEFAULT_ARTIST_STR;
-//Links
+//Links for current page
 var thanksLinks = [],
 	internalLinks = [],
 	externalLinks = [];
+//Links for all artist pages
+var	allPagesThanksLinks = [],
+	allPagesInternalLinks = [],
+	allPagesExternalLinks = [];
 //Pages
 var currentPage = 1,
- 	numberOfPages = 1;
+ 	numberOfPages = 1,
+ 	linksToArtistPages = [],
+	artistPagesDocuments = [];
 //Messages
 var INIT_DATA_MSG = "initData",
 	PROCESSING_INTERNAL_MSG = "processingInternal",
-	SAY_THANKS_MSG = "sayThanks";
+	SAY_THANKS_MSG = "sayThanks",
+	ALL_PAGES_DATA_MSG = "allPagesData";
 //External sites (file sharing)
 var mediafire = "mediafire.com",
 	rapidshare = "rapidshare.com",
 	ifolder = "ifolder.ru",
 	letitbit = "letitbit.net",
 	depositfiles = "depositfiles.com";
-var	externallSites = [mediafire, rapidshare, ifolder, letitbit, depositfiles];
+var	externalSites = [mediafire, rapidshare, ifolder, letitbit, depositfiles];
 	
 //Initialize script after injection
 getInitData();
@@ -42,34 +49,41 @@ console.log("Content script initialized");
 function getInitData() {
 	console.log("Gathering init data...");
 	
-	//Get user login and link to profile page
-	if (!isUserLoggedIn()) {
-		getLogin();
-	}
 	//Get artist name
 	if (artist == DEFAULT_ARTIST_STR) {
 		getArtist();
 	}
-	//Search links only if user is logged in
-	if (isUserLoggedIn()) {
-		//Search posts containing hidden links
-		if (thanksLinks.length < 1) {
-			findPostsWithHiddenLinksOnCurrentPage();			
-		}
-		//Search visible internal links
-		if (internalLinks.length < 1) {
-			findInternalLinksOnCurrentPage();			
-		}
-		//Search external links
-		if (externalLinks.length < 1) {
-			findExternalLinksOnCurrentPage();
-		}
+	
+	//Get user login and link to profile page
+	if (!isUserLoggedIn()) {
+		getLogin();
 	}
 	
-	//Update pages counter
-	if (numberOfPages == 1) {
-		getNumberOfArtistPages();		
-		getArrayOfLinksToArtistPages();
+	//Parse page only if the user is logged in
+	//This if clause is separate from previous one as both login and links data should be gathered 
+	//when the content script is initialized for the first time (just after injection by background script)
+	if (isUserLoggedIn()) {
+		//debugger;
+		//Search posts containing hidden links on current page
+		if (thanksLinks.length < 1) {
+			//Cleanup links array
+			//thanksLinks.length = 0;
+			thanksLinks = findPostsWithHiddenLinksOnPage(document);
+		}
+		
+		//Search visible internal links
+		if (internalLinks.length < 1) {
+			internalLinks = findInternalLinksOnPage(document);			
+		}
+		
+		//Search external links
+		if (externalLinks.length < 1) {
+			externalLinks = findExternalLinksOnPage(document);
+		}
+		
+		//Passe all pages in background
+		//The found links will be stored in content script, and will be sent to popup script on demand
+		parseAllArtistPages();
 	}
 }
 
@@ -88,8 +102,8 @@ function getLogin() {
 		profileLink = result.href;
 	}
 	
-	console.log("Login: " + login);
-	console.log("Link to profile: " + profileLink);
+	console.log("\tLogin: " + login);
+	console.log("\tLink to profile: " + profileLink);
 }
 
 /**
@@ -114,83 +128,86 @@ function getArtist() {
 		artist = result.childNodes[0].nodeValue.trim();
 	}
 	
-	console.log("Artist: " + artist);
+	console.log("\tArtist: " + artist);
 }
 
 /**
  * Searches posts containing hidden links and extracts URL of THanks button for every such post
  * These URLs will be hit by content script. Once thanks button is pressed and the page reloaded, the hidden links become visible
  */
-function findPostsWithHiddenLinksOnCurrentPage() {
-	console.log("Searching posts with hidden links on current page: " + location.href);
+function findPostsWithHiddenLinksOnPage(doc) {
+	console.log("Searching posts with hidden links on page: " + doc.URL);
 	
 	//search posts with hidden links
 	var post_xpath = "/html/body/div[2]/div/div/div/*[descendant::*[contains(.,'чтобы увидеть ссылку (нужна регистрация)')]]",
-		allpostsWithHiddenLinks = document.evaluate(post_xpath, document, null, XPathResult.ANY_TYPE, null),
+		allpostsWithHiddenLinks = doc.evaluate(post_xpath, doc, null, XPathResult.ANY_TYPE, null),
 		postWithHiddenLinks = allpostsWithHiddenLinks.iterateNext();
 	
-	//Cleanup links array
-	thanksLinks.length = 0;
-	
+	var links = [];
 	//add post_thanks links to array
 	while (postWithHiddenLinks) {
-		console.log("Found post with hidden links: " + postWithHiddenLinks.id);
+		console.log("\tFound post with hidden links: " + postWithHiddenLinks.id);
 		
 		//Select <a> element containing post-thanks link for a given post node
 		var postId = postWithHiddenLinks.id;
 		postId = postId.replace(/edit/g, '');
 		var aXpath = "//a[@id='post_thanks_button_" + postId + "']";
-		var hiddenURLs = document.evaluate(aXpath, document, null, XPathResult.ANY_TYPE, null);
+		var hiddenURLs = doc.evaluate(aXpath, doc, null, XPathResult.ANY_TYPE, null);
 		var hiddenURL = hiddenURLs.iterateNext();
-		console.log("Post thanks URL: " + hiddenURL.href);
-		thanksLinks.push(hiddenURL.href);
+		console.log("\tPost thanks URL: " + hiddenURL.href);
+		links.push(hiddenURL.href);
 		
 		postWithHiddenLinks = allpostsWithHiddenLinks.iterateNext();
 	}
+	
+	return links;
 }
 
 /**
  * Searches visible internal links on current page.
  * These links will be used by popup script to download music archives from deletemp3in24hours.com storage
  */
-function findInternalLinksOnCurrentPage() {
-	console.log("Searching internal links on current page: " + location.href);
+function findInternalLinksOnPage(doc) {
+	console.log("Searching internal links on page: " + doc.URL);
 	
 	//search all visible links 
 	var links_xpath = "//a[contains(@href,'deletemp3in24hours.com')]",
-		allPosts = document.evaluate(links_xpath, document, null, XPathResult.ANY_TYPE, null),
+		allPosts = doc.evaluate(links_xpath, doc, null, XPathResult.ANY_TYPE, null),
 		linkNode = allPosts.iterateNext();
 	
-	//Cleanup links array
-	internalLinks.length = 0;
-	
+	var links = [];
 	while (linkNode) {
-		console.log("Found internal link: " + linkNode.href);
+		console.log("\tFound internal link: " + linkNode.href);
 		//Add link to array, later we will download all files using those URLs
-		internalLinks.push(linkNode.href);
+		links.push(linkNode.href);
 		linkNode = allPosts.iterateNext();
 	}
+	
+	return links;
 }
 
 /**
  * Searches external links on current page.
  * These links will be used by popup script to open them in a separate tabs
  */
-function findExternalLinksOnCurrentPage() {
-	//Cleanup links array
-	externalLinks.length = 0;
-	for (var i = 0; i < externallSites.length; i++) {
-		  site = externallSites[i];
+function findExternalLinksOnPage(doc) {
+	console.log("Searching external links on page: " + doc.URL);
+
+	var links = [];
+	for (var i = 0; i < externalSites.length; i++) {
+		  site = externalSites[i];
 		  var links_xpath = "//a[contains(@href,'" + site +"')]",
-			allLinks = document.evaluate(links_xpath, document, null, XPathResult.ANY_TYPE, null),
+			allLinks = doc.evaluate(links_xpath, doc, null, XPathResult.ANY_TYPE, null),
 			linkNode = allLinks.iterateNext();
 
 			while (linkNode) {
-				console.log("Found external link: " + linkNode.href);
-				externalLinks.push(linkNode.href);
+				console.log("\tFound external link: " + linkNode.href);
+				links.push(linkNode.href);
 				linkNode = allLinks.iterateNext();
 		}
 	}
+	
+	return links;
 }
 
 /**
@@ -270,11 +287,11 @@ function processHiddenLinks() {
 			xmlHttp.onreadystatechange = function(i) {
 				if (xmlHttp.readyState == 4) {
 					if(xmlHttp.status == 200) {
-						console.log("Link hitted: " + thanksLinks[i]);
+						console.log("\tLink hitted: " + thanksLinks[i]);
 					}
 				}
 			};
-			console.log("Hitting link: " + thanksLinks[i]);
+			console.log("\tHitting link: " + thanksLinks[i]);
 			xmlHttp.send(null);
 		}
 		
@@ -287,13 +304,12 @@ function processHiddenLinks() {
  * Gets a number of pages for current artist
  */
 function getNumberOfArtistPages() {
-	//debugger;
 	//Search pages element on current page 
 	var pages_xpath = "/html/body/div/div/div/table[4]/tbody/tr/td[2]/div/table/tbody/tr/td",
 		allPages = document.evaluate(pages_xpath, document, null, XPathResult.ANY_TYPE, null),
 		pageNode = allPages.iterateNext();
 	
-	while (pageNode) {
+	if (pageNode) {
 		var currentPageStr = pageNode.innerText.replace(/Страница /g, '');  
 		var pos = currentPageStr.indexOf(" ");
 		currentPageStr = currentPageStr.substring(0, pos);
@@ -302,8 +318,6 @@ function getNumberOfArtistPages() {
 		var regex = new RegExp("Страница " + currentPage + " из ", "g");
 		var pagesCnt = pageNode.innerText.replace(regex, '');
 		numberOfPages = parseInt(pagesCnt, 10);
-		
-		break;
 	}
 	
 	console.log("Current page: " + currentPage);
@@ -314,38 +328,109 @@ function getNumberOfArtistPages() {
  * Gets an array of URLs to artist pages
  */
 function getArrayOfLinksToArtistPages() {
-	var links = [location.href];
+	//Clean up
+	linksToArtistPages.length = 0;
+	
+	linksToArtistPages = [location.href];
 	
 	//Set the URL of the first page
 	if (currentPage != 1) {
 		var regex = new RegExp("-" + currentPage + ".html", "g"),
 		urlStr = location.href.replace(regex, ".html");
-		links[0] = urlStr;
+		linksToArtistPages[0] = urlStr;
 	}
 	
 	console.log("All pages:");
-	console.log(links[0]);
+	console.log("\t" + linksToArtistPages[0]);
 	for (var i=2; i <= numberOfPages; i++) {
-		var pageUrl = links[0];
+		var pageUrl = linksToArtistPages[0];
 		pageUrl = pageUrl.replace(/.html/g, "-" + i + ".html");
-		console.log(pageUrl);
+		linksToArtistPages.push(pageUrl);
+		console.log("\t" + pageUrl);
 	}
 }
 
+
 function parseAllArtistPages() {
 	console.log("Parsing all pages... ");
+
+	if (numberOfPages == 1) {
+		//Update pages counter and get current page number
+		getNumberOfArtistPages();		
+		//Get array of links
+		getArrayOfLinksToArtistPages();
+	}
 	
-	//Get array of links
 	//Get pages (hit urls)
-	//Append all pages
-	//Parse all pages
-	//Get links to posts with hidden music
-	//Get external links
-	//Get internal links
+	if (linksToArtistPages.length > 1) {
+		console.log("linksToArtistPages.length: " + linksToArtistPages.length);
+		
+		var pagesCounter = numberOfPages;
+		var xmlHttp = null;
+		for (var i=0; i < linksToArtistPages.length; i++) {
+			xmlHttp = new XMLHttpRequest();
+			xmlHttp.open("GET", linksToArtistPages[i], true ); //true - async
+			xmlHttp.onreadystatechange = function(i) {
+				if (xmlHttp.readyState == 4) {
+					if(xmlHttp.status == 200) {
+						console.log("Link hitted: " + linksToArtistPages[i]);
+						
+						//debugger;
+						//Retrieve page
+			   			var srvResponseText = xmlHttp.responseText;
+			   			
+			   			//Create new document
+			   			var doc = document.implementation.createHTMLDocument('title');
+			   		    doc.documentElement.innerHTML = srvResponseText;
+			   		    document.documentElement.
+			   		    //Parse page:
+			   		    //1) Get links to posts with hidden music
+			   		    allPagesThanksLinks = findPostsWithHiddenLinksOnPage(doc);
+			   		    
+			   		    //2) Get external links
+			   		    allPagesInternalLinks = findInternalLinksOnPage(doc);		
+			   		    
+			   		    //3) Get internal links
+			   		    allPagesExternalLinks = findExternalLinksOnPage(doc);
+			   		    
+			   		    //Add page to global array
+			   		    artistPagesDocuments.push(doc);
+			   		    pagesCounter--;
+			   		    
+			   		    //Filter links
+			   		    allPagesThanksLinks = allPagesThanksLinks.filter(onlyUnique);
+			   		    allPagesInternalLinks = allPagesInternalLinks.filter(onlyUnique);
+			   		    allPagesExternalLinks = allPagesExternalLinks.filter(onlyUnique);
+			   		    
+			   		    //Once all artist pages were parsed - send data to popup script
+			   			if (pagesCounter == 0) {
+			   				//Send updated links data to popup
+			   				chrome.runtime.sendMessage({answerMsg: ALL_PAGES_DATA_MSG, 
+			   					allPagesPostsWithHiddenLinksCountMsg: allPagesThanksLinks.length,
+			   					allPagesInternalLinksMsg: allPagesInternalLinks,
+			   					allPagesExternalLinksMsg: allPagesExternalLinks,
+			   					numberOFPagesMsg: numberOfPages});
+			   			}
+					}
+				}
+			};
+			console.log("\tParsing page: " + linksToArtistPages[i]);
+			xmlHttp.send(null);
+		}
+		
+		//Perform cleanup
+		//linksToArtistPages.length = 0;
+	}
+	
+	
 	//if (auto_process) -
 	//	hit all links to posts
 	// re-parse internal links
 	// send all internal and external links to popup
+}
+
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
 }
 
 //Listens to income messages
@@ -362,13 +447,9 @@ chrome.runtime.onMessage.addListener(
 										loginMsg: login, 
 										profileLinkMsg: profileLink, 
 										artistMsg: artist,
-										postsWithHiddenLinksMsg: thanksLinks.length,
+										postsWithHiddenLinksCountMsg: thanksLinks.length,
 										internalLinksMsg: internalLinks,
 										externalLinksMsg: externalLinks});
-			//Pase all pages in background
-			//The found links will be stored in content script, and will be sent to popup script on demand
-			parseAllArtistPages();
-			
 		}
 		//Handle SAY_THANKS_MSG data request
 		if (requestMsg == SAY_THANKS_MSG) {
