@@ -23,7 +23,7 @@ var	allPagesThanksLinks = [],
 	allPagesExternalLinks = [];
 //Pages
 var currentPage = 1,
- 	numberOfPages = 1,
+ 	numberOfPages = 0,
  	linksToArtistPages = [],
 	artistPagesDocuments = [];
 //Messages
@@ -79,6 +79,13 @@ function getInitData() {
 		//Search external links
 		if (externalLinks.length < 1) {
 			externalLinks = findExternalLinksOnPage(document);
+		}
+		
+		if (numberOfPages == 0) {
+			//Update pages counter and get current page number
+			getNumberOfArtistPages();
+			//Get array of links
+			getArrayOfLinksToArtistPages();
 		}
 		
 		//Passe all pages in background
@@ -287,7 +294,7 @@ function processHiddenLinks() {
 			xmlHttp.onreadystatechange = function(i) {
 				if (xmlHttp.readyState == 4) {
 					if(xmlHttp.status == 200) {
-						console.log("\tLink hitted: " + thanksLinks[i]);
+						console.log("\tLink hitted");
 					}
 				}
 			};
@@ -320,6 +327,11 @@ function getNumberOfArtistPages() {
 		numberOfPages = parseInt(pagesCnt, 10);
 	}
 	
+	//In case of only 1 page there is no pages element
+	//Thus, we initialize it with value of 1
+	if (numberOfPages == 0) {
+		numberOfPages++;
+	}
 	console.log("Current page: " + currentPage);
 	console.log("Found pages: " + numberOfPages);
 }
@@ -352,37 +364,30 @@ function getArrayOfLinksToArtistPages() {
 
 
 function parseAllArtistPages() {
-	console.log("Parsing all pages... ");
-
-	if (numberOfPages == 1) {
-		//Update pages counter and get current page number
-		getNumberOfArtistPages();		
-		//Get array of links
-		getArrayOfLinksToArtistPages();
-	}
-	
-	//Get pages (hit urls)
-	if (linksToArtistPages.length > 1) {
-		console.log("linksToArtistPages.length: " + linksToArtistPages.length);
-		
+	//Get pages (hit urls) only if the number of pages is more then 1.
+	//If there is only one page - we've already parsed it. 
+	if (numberOfPages > 1) {
+		console.log("Parsing all pages... ");
 		var pagesCounter = numberOfPages;
 		var xmlHttp = null;
 		for (var i=0; i < linksToArtistPages.length; i++) {
 			xmlHttp = new XMLHttpRequest();
 			xmlHttp.open("GET", linksToArtistPages[i], true ); //true - async
-			xmlHttp.onreadystatechange = function(i) {
+			xmlHttp.onreadystatechange = function() {
 				if (xmlHttp.readyState == 4) {
 					if(xmlHttp.status == 200) {
-						console.log("Link hitted: " + linksToArtistPages[i]);
+						console.log("Responce from server received");
 						
 						//debugger;
+						//TODO: parse anf log page URL
+						
 						//Retrieve page
 			   			var srvResponseText = xmlHttp.responseText;
 			   			
 			   			//Create new document
 			   			var doc = document.implementation.createHTMLDocument('title');
 			   		    doc.documentElement.innerHTML = srvResponseText;
-			   		    document.documentElement.
+			   		    
 			   		    //Parse page:
 			   		    //1) Get links to posts with hidden music
 			   		    allPagesThanksLinks = findPostsWithHiddenLinksOnPage(doc);
@@ -395,12 +400,13 @@ function parseAllArtistPages() {
 			   		    
 			   		    //Add page to global array
 			   		    artistPagesDocuments.push(doc);
+			   		    console.log("\tpagesCounter: " + pagesCounter);
 			   		    pagesCounter--;
 			   		    
 			   		    //Filter links
-			   		    allPagesThanksLinks = allPagesThanksLinks.filter(onlyUnique);
-			   		    allPagesInternalLinks = allPagesInternalLinks.filter(onlyUnique);
-			   		    allPagesExternalLinks = allPagesExternalLinks.filter(onlyUnique);
+			   		    //allPagesThanksLinks = allPagesThanksLinks.filter(onlyUnique);
+			   		    //allPagesInternalLinks = allPagesInternalLinks.filter(onlyUnique);
+			   		    //allPagesExternalLinks = allPagesExternalLinks.filter(onlyUnique);
 			   		    
 			   		    //Once all artist pages were parsed - send data to popup script
 			   			if (pagesCounter == 0) {

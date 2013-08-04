@@ -275,6 +275,7 @@ function setPagesDataOnCheckboxClick() {
 
 function handleAllPagesData(request) {
 	console.log("Setting all pages data");
+	
 	//Just store data related to all artist pages
 	//The UI will be updated by a separate function on user's click
 	areAllPagesProcessed = true;
