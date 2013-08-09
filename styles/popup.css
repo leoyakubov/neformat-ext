@@ -38,6 +38,7 @@ body {
 
 .linksButton {
 	text-align:right;
+	padding-right:10px;
 }
 
 #allPagesCheckBox {

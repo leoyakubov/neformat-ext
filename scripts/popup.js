@@ -20,7 +20,8 @@ var postsWithHiddenLinksCount = 0;
 var INIT_DATA_MSG = "initData";
 	PROCESSING_INTERNAL_MSG = "processingInternal",
 	SAY_THANKS_MSG = "sayThanks",
-	ALL_PAGES_DATA_MSG = "allPagesData";
+	ALL_PAGES_DATA_MSG = "allPagesData",
+	SAY_THANKS_ALL_PAGES_MSG = "sayThanksAllPages";
 //Here we store IDs of all download tabs
 var donwloadTabIds = [];
 //ID of current tab
@@ -113,7 +114,7 @@ function handleInitData(request) {
 	internalLinks = request.internalLinksMsg;
 	externalLinks = request.externalLinksMsg;
 
-	console.log("Current page: post with hidden links found: " + postsWithHiddenLinksCount);
+	console.log("Current page: posts with hidden links found: " + postsWithHiddenLinksCount);
 	console.log("Current page: internal links found: " + internalLinks.length);
 	console.log("Current page: exteranl links found: " + externalLinks.length);
 	
@@ -129,7 +130,7 @@ function handleInitData(request) {
  * @param setAllPagesData - true if links data from all pages should be set
  */
 function updateLinksData() {
-	console.log("Setting links data...");
+	console.log("Updating links data within popup page...");
 	var hiddenCount,
 		internal,
 		external;
@@ -197,15 +198,18 @@ function showAboutPage() {
 }
 
 /**
- * Sends a message to content script to process all posts containing hidden links and re-parse page for all visible internal links
+ * Sends a message to content script to process all posts containing hidden links and re-parse page(s) for all visible internal links
  */
 function sayThanksForAllPostsWithHiddenLinks() {
 	chrome.tabs.query({currentWindow: true, active: true}, function (tabs) {
 		var currTabId = tabs[0].id;
 		console.log("Current tab ID: " + currTabId);
-
+		
+		//Send message to process all pages or just current one regarding the checkbox state
+		var msg = isCheckboxEnabled ? SAY_THANKS_ALL_PAGES_MSG : SAY_THANKS_MSG;
 		console.log("Sending request to the content script to click all thanks buttons...");
-		chrome.tabs.sendMessage(currTabId,{message: SAY_THANKS_MSG}, function (response){
+		
+		chrome.tabs.sendMessage(currTabId,{message: msg}, function (response){
 			console.log("Links received after page refresh");
 		});
 	});
@@ -273,6 +277,20 @@ function setPagesDataOnCheckboxClick() {
 	updateLinksData();
 }
 
+function handleUpdatedLinksData(request) {
+	console.log("Setting all pages data");
+	
+	//Set updated data for current page
+	postsWithHiddenLinksCount = request.postsWithHiddenLinksCountMsg;	
+	internalLinks = request.internalLinksMsg;
+
+	console.log("Current page: posts with hidden links found: " + postsWithHiddenLinksCount);
+	console.log("Current page: internal links found: " + internalLinks.length);
+	console.log("Current page: exteranl links found: " + externalLinks.length);
+	
+	updateLinksData();
+}
+
 function handleAllPagesData(request) {
 	console.log("Setting all pages data");
 	
@@ -283,14 +301,16 @@ function handleAllPagesData(request) {
 	allPagesInternalLinks = request.allPagesInternalLinksMsg;
 	allPagesExternalLinks = request.allPagesExternalLinksMsg;
 	
-	console.log("All pages: post with hidden links found: " + allPagesPostsWithHiddenLinksCount);
+	console.log("All pages: posts with hidden links found: " + allPagesPostsWithHiddenLinksCount);
 	console.log("All pages: internal links found: " + allPagesInternalLinks.length);
 	console.log("All pages: exteranl links found: " + allPagesExternalLinks.length);
 	
 	//Set status
-	var numOfPages = request.numberOFPagesMsg;
+	var numOfPages = request.numberOfPagesMsg;
 	var statusMsg = numOfPages + " pages parsed";
 	setStatus(statusMsg);
+	
+	updateLinksData();
 }
 
 //Fires up when popup page has been loaded
@@ -316,6 +336,6 @@ chrome.extension.onMessage.addListener(
 				handleUpdatedLinksData(request);
 			}
 			if (requestMsg == ALL_PAGES_DATA_MSG) {
-				handleAllPagesData(request);	
+				handleAllPagesData(request);
 			}
 });
