@@ -59,7 +59,6 @@ console.log("Background initialized");
  * @returns {Boolean}
  */
 function isAValidUrl(url) {
-	//TODO Replace this mess with a correct artist page URL pattern
 	//Check first if this is a neformat forum page
 	if (url.indexOf(forumUrl) < 0) {
 		console.log("This is not a Neformat forum page");
@@ -71,6 +70,7 @@ function isAValidUrl(url) {
 	//Here distorted-unit/917-isis.html is the suffix
 	var urlSuffix = url.substring(url.indexOf(forumUrl) + 1); // +1 "/" symbol
 	
+	/*
 	//Check if suffix is not empty and ends with html extension
 	var isCorrectUrlSuffix = urlSuffix.length > 0 && (urlSuffix.indexOf("html") > -1);
 	
@@ -89,13 +89,22 @@ function isAValidUrl(url) {
 	
 	if (!isCorrectPage) {
 		return false;
-	}
+	}*/
 	
 	//Finally, traverse through all allowed sub-forums and check if url contains any of them
 	for (var i=0; i<subForums.length; i++) {
 		if (urlSuffix.indexOf(subForums[i]) > -1) {
-			console.log("A valid artist page detected!");
-			return true;
+			//Artist URL pattern
+			var pattern = /(\d+)(\-)([\-\w]+)([\-?\d]*)(.html)/i;
+			var isCorrectArtistPage = pattern.test(urlSuffix);
+			
+			if (isCorrectArtistPage) {				
+				console.log("A valid artist page detected!");
+				return true;
+			}
+			
+			//Break even if suffix has not matched as a part of a valid artist URL
+			break; 
 		}
 	}
 	

@@ -7,6 +7,9 @@
 * 
 */
 
+
+// Global variables only exist for the life of the page, so they get reset
+// each time the page is unloaded.
 //Init data
 var DEFAULT_LOGIN_STR = "NONE_USER",
 	DEFAULT_ARTIST_STR = "NONE_ARTIST",
@@ -37,8 +40,9 @@ var mediafire = "mediafire.com",
 	rapidshare = "rapidshare.com",
 	ifolder = "ifolder.ru",
 	letitbit = "letitbit.net",
+	fourshared = "4shared.com",
 	depositfiles = "depositfiles.com";
-var	externalSites = [mediafire, rapidshare, ifolder, letitbit, depositfiles];
+var	externalSites = [mediafire, rapidshare, ifolder, letitbit, fourshared, depositfiles];
 
 var _XHRID = 0;
 var _XHRCALL = [];
@@ -253,7 +257,7 @@ function findExternalLinksOnPage(doc, url) {
  * 
  * @param requestMsg - message will be sent back to popup script
  */
-function processPage(requestMsg) {
+function processCurrentPage(requestMsg) {
 	//First, click all Thanks buttons for posts containing hidden links
 	processHiddenLinks();
 	
@@ -271,7 +275,10 @@ function processPage(requestMsg) {
 		 	if (xmlHttp.readyState == 4) {
 		   		if(xmlHttp.status == 200) {
 		   			console.log("Page has been reloaded");
-		    		
+		   			
+		   			//Re-parse all pages
+		   			parseAllArtistPages();
+		   			
 		   			//NOTE: After parsing the response text into XML document no exceptions occured, 
 		   			//but we were unable to find any links by using document.evaluate() method,
 		   			//since the retrieved document is not a valid XML document
@@ -473,7 +480,7 @@ function parseAllArtistPages() {
 		console.log("Parsing all pages... ");
 		
 		cleanupAllPagesData();
-		pagesLeft = numberOfPages; //dig here
+		pagesLeft = numberOfPages;
 		
 		for (var i=0; i < linksToArtistPages.length; i++) {
 			parsePage(linksToArtistPages[i]);
@@ -517,6 +524,9 @@ function processAllPages(requestMsg) {
 	//Reload page, append new body, search all internal links
 	//Wait 3 seconds until all hidden links were hit
 	setTimeout(function() {
+		//First, re-parse current page
+		processCurrentPage(requestMsg);
+		
 		//Now re-parse all pages and send updated data to popup
 		parseAllArtistPages();
 	}, 3000);
@@ -552,6 +562,7 @@ chrome.runtime.onMessage.addListener(
 		var requestMsg = request.message;
 		console.log("Content-script has received a message: " + requestMsg);
 		
+		//TODO Add switch statement here
 		//Handle INIT_DATA_MSG request
 		if (requestMsg == INIT_DATA_MSG) {
 			getInitData();
@@ -573,7 +584,7 @@ chrome.runtime.onMessage.addListener(
 			//Respond to popup
 			chrome.runtime.sendMessage({answerMsg: PROCESSING_INTERNAL_MSG});
 			//Process current page
-			processPage(requestMsg);
+			processCurrentPage(requestMsg);
 		}
 		//Handle SAY_THANKS_ALL_PAGES_MSG data request
 		if (requestMsg == SAY_THANKS_ALL_PAGES_MSG) {

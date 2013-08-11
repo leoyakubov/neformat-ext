@@ -3,12 +3,17 @@ body {
 	height:200px; 
 	background-color:#FFFFFF;
 	margin:0;
-} 
+}
 
 #bodyDiv {
 	border: 1px solid brown;
 	margin:0;
 	padding:5px;
+}
+
+::-webkit-scrollbar {
+	-webkit-appearance: none;
+	width: 1px;
 }
 
 #artistName {
@@ -48,8 +53,9 @@ body {
 
 #statusBar {
 	font-size:11px;
-	padding-right:10px;
 	padding-left:10px;
+	padding-right:10px;
+	padding-top:10px;
 }
 
 #userTextSpan {
