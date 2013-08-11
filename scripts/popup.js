@@ -7,9 +7,8 @@
 * 
 */
 
-
-// Global variables only exist for the life of the page, so they get reset
-// each time the page is unloaded.
+//Global variables only exist for the life of the popup page, so they get reset
+//each time the page is unloaded.
 //Init data
 var login = "",
 	DEFAULT_LOGIN_STR = "NONE_USER",
@@ -17,7 +16,6 @@ var login = "",
 	artist = "";
 //Messages
 var INIT_DATA_MSG = "initData";
-	PROCESSING_INTERNAL_MSG = "processingInternal",
 	SAY_THANKS_MSG = "sayThanks",
 	ALL_PAGES_DATA_MSG = "allPagesData",
 	SAY_THANKS_ALL_PAGES_MSG = "sayThanksAllPages";
@@ -68,7 +66,6 @@ function Data() {
 		return isCheckboxEnabled ? this.allPagesExternalLinks : this.externalLinks;
 	};
 };
-
 //Instantiate data object
 var data = new Data();
 
@@ -100,9 +97,9 @@ function initPopup() {
 }
 
 /**
- * Sets up all init data like artist name and links found on page to popup
+ * Sets up all init data like artist name and links found on page within popup
  * 
- * @param request - object containing all init data sent by content script to popup
+ * @param request - object containing all init data sent by content script
  */
 function handleInitData(request) {
 	//Set login and artist
@@ -133,23 +130,15 @@ function handleInitData(request) {
 	//Set correct URLs for external sites
 	var lfElement = document.getElementById('lastfm');
 	lfElement.href = lfElement.href + artist.replace(/ /g, '+');
-	//console.log("Corrected lf URL:" + lfElement.href);
-		
 	var gsElement = document.getElementById('grooveshark');
 	gsElement.href = gsElement.href + artist.replace(/ /g, '+');
-	//console.log("Corrected gs URL:" + gsElement.href);
-		
 	var ytElement = document.getElementById('youtube');
 	ytElement.href = ytElement.href + artist.replace(/ /g, '+');
-	//console.log("Corrected yt URL:" + ytElement.href);
-		
 	var rtElement = document.getElementById('rutracker');
 	rtElement.href = rtElement.href + artist.replace(/ /g, '%20');
-	//console.log("Corrected rt URL:" + rtElement.href);
 
 	//Init current page data
 	data.setCurrentPageData(request.postsWithHiddenLinksCountMsg, request.internalLinksMsg, request.externalLinksMsg);
-
 	console.log("Current page: posts with hidden links found: " + data.postsWithHiddenLinksCount);
 	console.log("Current page: internal links found: " + data.internalLinks.length);
 	console.log("Current page: exteranl links found: " + data.externalLinks.length);
@@ -159,11 +148,7 @@ function handleInitData(request) {
 }
 
 /**
- * Sets up links data found on page
- * 
- * @param request - object containing all init data sent by content script to popup
- * 
- * @param setAllPagesData - true if links data from all pages should be set
+ * Sets up links data found on page/all pages depending on current checkbox state
  */
 function updateLinksData() {
 	console.log("Updating links data within popup page...");
@@ -177,60 +162,29 @@ function updateLinksData() {
 	else {
 		hiddenCountElem.style.color = "Black";
 	}
-	
 	//Handle visible internal links 
 	var internalCountElem = document.getElementById('foundVisible');
 	internalCountElem.innerText = data.getInternal().length;		
-	
 	//Handle external links 
 	var externalCountElem = document.getElementById('foundExternal');
 	externalCountElem.innerText = data.getExternal().length;		
-	
-	/*//Clear status
-	var statusMsg = "done!";
-	setStatus(statusMsg);*/
 }
 
 /**
- * Opens user profile page in a separate tab
- */
-function openProfilePage() {
-	chrome.tabs.create({url: profileLink});
-}
-
-/**
- * Opens about page
- */
-function showAboutPage() {	
-	var aboutPageElem = document.getElementById('aboutPopup');
-	
-	if (!isAboutPageOpened) {
-		var extNameElem = document.getElementById('extName');
-		extNameElem.innerText = chrome.runtime.getManifest().name + " v." + chrome.runtime.getManifest().version;
-		document.documentElement.style.overflow = 'hidden';
-		aboutPageElem.style.display = "block";
-	}
-	else {
-		aboutPageElem.style.display = "none";
-		document.documentElement.style.height = '200px';
-	}
-	
-	//Invert flag
-	isAboutPageOpened = !isAboutPageOpened;
-}
-
-/**
- * Sends a message to content script to process all posts containing hidden links and re-parse page(s) for all visible internal links
+ * Sends a message to content script to process all posts containing hidden links 
+ * and re-parse page(s) for all visible internal links
  */
 function sayThanksForAllPostsWithHiddenLinks() {
 	chrome.tabs.query({currentWindow: true, active: true}, function (tabs) {
 		var currTabId = tabs[0].id;
 		console.log("Current tab ID: " + currTabId);
 		
+		//Set status
+		var statusMsg = "processing...";
+		setStatus(statusMsg);
 		//Send message to process all pages or just current one regarding the checkbox state
 		var msg = isCheckboxEnabled ? SAY_THANKS_ALL_PAGES_MSG : SAY_THANKS_MSG;
-		console.log("Sending request to the content script to click all thanks buttons...");
-		
+		console.log("Sending request to the content script to click all thanks buttons...");		
 		chrome.tabs.sendMessage(currTabId,{message: msg}, function (response){
 			console.log("Links received after page refresh");
 		});
@@ -263,6 +217,32 @@ function openExternalLinks() {
 	}
 }
 
+/**
+ * Opens user profile page in a separate tab
+ */
+function openProfilePage() {
+	chrome.tabs.create({url: profileLink});
+}
+
+/**
+ * Opens/closes about page
+ */
+function showAboutPage() {	
+	var aboutPageElem = document.getElementById('aboutPopup');
+	if (!isAboutPageOpened) {
+		var extNameElem = document.getElementById('extName');
+		extNameElem.innerText = chrome.runtime.getManifest().name + " v." + chrome.runtime.getManifest().version;
+		document.documentElement.style.overflow = 'hidden';
+		aboutPageElem.style.display = "block";
+	}
+	else {
+		aboutPageElem.style.display = "none";
+		document.documentElement.style.height = '200px';
+	}
+	//Invert flag
+	isAboutPageOpened = !isAboutPageOpened;
+}
+
 /** 
  * Sets message within a status bar
  * 
@@ -273,18 +253,18 @@ function setStatus(msg) {
 	countElem.innerText = "Status: " + msg;
 }
 
+/** 
+ * Sets links data and updates label depending on checkbox state
+ */
 function setPagesDataOnCheckboxClick() {
 	var checkBoxElem = document.getElementById('allPagesCheckBox');
 	isCheckboxEnabled = checkBoxElem.checked;
-	
-	//areAllPagesProcessed = true;
 	var linksLabelElem = document.getElementById('linksLabel');
 	
 	//Check if script has all page data
 	if (!data.areAllPagesProcessed) {
 		return;
 	}
-		
 	//Show data for all pages
 	if (isCheckboxEnabled) {
 		console.log("Showing all pages data");
@@ -299,13 +279,18 @@ function setPagesDataOnCheckboxClick() {
 	updateLinksData();
 }
 
+/** 
+ * Updates links data after current page has been processed.
+ * 
+ * @param request - object containing updated data sent by content script
+ */
 function handleUpdatedLinksData(request) {
 	console.log("Setting all pages data");
 	
 	//Set updated data for current page
 	data.postsWithHiddenLinksCount = request.postsWithHiddenLinksCountMsg;	
 	data.internalLinks = request.internalLinksMsg;
-
+	
 	console.log("Current page: posts with hidden links found: " + data.postsWithHiddenLinksCount);
 	console.log("Current page: internal links found: " + data.internalLinks.length);
 	console.log("Current page: exteranl links found: " + data.externalLinks.length);
@@ -317,6 +302,11 @@ function handleUpdatedLinksData(request) {
 	setStatus(statusMsg);
 }
 
+/** 
+ * Updates links data after all artist pages had been processed.
+ * 
+ * @param request - object containing updated data sent by content script
+ */
 function handleAllPagesData(request) {
 	console.log("Setting all pages data");
 	
@@ -333,7 +323,10 @@ function handleAllPagesData(request) {
 	
 	//Set status
 	var numOfPages = request.numberOfPagesMsg;
-	var statusMsg = numOfPages + " pages parsed";
+	var statusMsg = numOfPages + " page parsed";
+	if (numOfPages > 1) {
+		statusMsg = numOfPages + " pages parsed";
+	}
 	setStatus(statusMsg);
 	
 	updateLinksData();
@@ -350,19 +343,17 @@ chrome.extension.onMessage.addListener(
 			console.log("Popup script has received a message: " + request.answerMsg);
 			var requestMsg = request.answerMsg;
 			
-			//TODO Add switch statement here
 			//Handle every message by a separate function
-			if (requestMsg == INIT_DATA_MSG) {
+			switch (requestMsg)
+			{
+			case INIT_DATA_MSG:
 				handleInitData(request);
-			}
-			if (requestMsg == PROCESSING_INTERNAL_MSG) {
-				var statusMsg = "processing...";
-				setStatus(statusMsg);
-			}
-			if (requestMsg == SAY_THANKS_MSG) {
+				break;
+			case SAY_THANKS_MSG:
 				handleUpdatedLinksData(request);
-			}
-			if (requestMsg == ALL_PAGES_DATA_MSG) {
+				break;
+			case ALL_PAGES_DATA_MSG:
 				handleAllPagesData(request);
+			 	break;
 			}
 });
