@@ -69,6 +69,20 @@ function Data() {
 //Instantiate data object
 var data = new Data();
 
+//Google analytics
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-43501211-1']);
+_gaq.push(['_trackPageview']);
+
+(function() {
+  var ga = document.createElement('script');
+  ga.type = 'text/javascript';
+  ga.async = true;
+  ga.src = 'https://ssl.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0];
+  s.parentNode.insertBefore(ga, s);
+})();
+
 
 /**
  * Initializes popup page, sends a message to content script to get all data needed
@@ -332,8 +346,21 @@ function handleAllPagesData(request) {
 	updateLinksData();
 }
 
+/**
+ * Tracks a click on a button/link using the asynchronous tracking API.
+ */
+function trackButtonClick(e) {
+	_gaq.push(['_trackEvent', e.target.id, 'clicked']);
+}
+
 //Fires up when popup page has been loaded
 document.addEventListener('DOMContentLoaded', function() {
+	//Set buttons click handlers for Google analytics
+	var links = document.querySelectorAll('a');
+	for (var i = 0; i < links.length; i++) {
+		links[i].addEventListener('click', trackButtonClick);
+	}
+	
 	initPopup();
 });
 
